@@ -1,0 +1,101 @@
+<project name="SpartaSave" basedir=".">
+
+    <!-- Property definitions -->
+    <property file="build.properties"/>
+
+
+    <!-- Include jar files -->
+    <path id="classpath">
+        <fileset dir="${lib.dir}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <presetdef name="javac">
+        <javac includeantruntime="false" />
+    </presetdef>
+
+    <!-- Tomcat Ant tasks -->
+    <taskdef name="deploy" classname="org.apache.catalina.ant.DeployTask">
+        <classpath refid="classpath"/>
+    </taskdef>
+    <taskdef name="undeploy"  classname="org.apache.catalina.ant.UndeployTask">
+        <classpath refid="classpath"/>
+    </taskdef>
+
+    <!-- Target methods -->
+    <target name="clean" description="Cleaning the .war file and directories.">
+        <echo>Cleaning ${dist.dir}</echo>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <target name="init" depends="clean" description="Creating build directories.">
+        <echo>Creating the build directory</echo>
+        <mkdir dir="${build.dir}/WEB-INF/classes"/>
+        <mkdir dir="${build.dir}/WEB-INF/lib"/>
+    </target>
+
+    <target name="compile" depends="init" description="Compiling java files.">
+        <echo>Compile the source files</echo>
+        <javac srcdir="${src.dir}" destdir="${build.dir}/WEB-INF/classes">
+            <classpath refid="classpath"/>
+        </javac>
+    </target>
+
+    <target name="copy" depends="compile" description="Copying the other necessary files.">
+        <echo>Copying web and jar files to build directory.</echo>
+        <copy todir="${build.dir}">
+            <fileset dir="${web.content}"/>
+        </copy>
+        <copy todir="${build.dir}/WEB-INF/lib">
+            <fileset dir="${lib.dir}"/>
+        </copy>
+    </target>
+
+    <target name="build" description="Compile and create .war file." depends="copy">
+        <echo>Building the war file</echo>
+        <war destfile="${dist.dir}/${project.name}.war" webxml="${basedir}/web/WEB-INF/web.xml">
+            <fileset dir="${build.dir}"/>
+        </war>
+    </target>
+    
+    <target name="dist" >
+        
+    </target>
+    
+    <target name="deploy" description="Deploy SpartaSave." depends="build">
+        <deploy 
+            url="${url}" 
+            username="${username}" 
+            password="${password}"
+            path="${path}"
+            war="file:${dist.dir}/${project.name}.war"
+        />
+    </target>
+    
+    <target name="undeploy" description="Remove SpartaSave.">
+        <undeploy url="${url}" username="${username}" password="${password}"
+            path="${path}"/>
+    </target>
+
+    <target name="dbcreate" description="Create SpartaSave database.">
+        <sql 
+            driver="${sql.driver}" 
+            url="${sql.url}" 
+            userid="${sql.user}" 
+            password="${sql.pass}"
+            classpath="${basedir}/lib/mysql-connector-java-5.1.23-bin.jar"
+            src="create_spartasavedb.sql"
+        />
+    </target>
+
+    <target name="dbdrop" description="Drop SpartaSave database.">
+        <sql driver="${sql.driver}" url="${sql.url}" userid="${sql.user}" password="${sql.pass}" >
+            <classpath>
+                <pathelement location="${basedir}/lib/mysql-connector-java-5.1.23-bin.jar"/>
+            </classpath>
+            drop database spartasavedb;
+        </sql>
+   </target>
+
+</project>
